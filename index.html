@@ -1,654 +1,635 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Menu, X, Github, Mail, FileText, 
-  Cpu, Brain, ChevronDown, ExternalLink, GraduationCap, Briefcase,
-  MessageCircle, Globe, MapPin, Activity
-} from 'lucide-react';
-import { initializeApp } from "firebase/app";
-import { 
-  getFirestore, collection, doc, setDoc, onSnapshot, 
-  increment 
-} from "firebase/firestore";
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "firebase/auth";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dharmendra Prajapat | AI Researcher & Data Scientist</title>
+    
+    <!-- Tailwind CSS (Styling) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-// --- FIREBASE SETUP ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    <!-- Custom Config for Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+                        'bounce-slow': 'bounce 2s infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
-// --- RESUME DATA ---
-const PORTFOLIO_DATA = {
-  personal: {
-    name: "Dharmendra Prajapat",
-    title: "AI Researcher & Data Scientist",
-    tagline: "Specializing in LLMs, Dialogue Systems, and Reinforcement Learning",
-    contact: {
-      email: "dk008652@gmail.com",
-      phone: "+91-8386989758",
-      website: "https://dk008652.github.io/",
-      github: "https://github.com/dk008652",
-      whatsapp: "918386989758"
-    },
-    about: "I am a Ph.D. Research Scholar at the Data Mining Research Lab, IIT Roorkee. My research focuses on pushing the boundaries of Natural Language Processing, specifically in Task-oriented Dialogue Systems, Recommendation Systems, and Large Language Models (LLMs). I aim to build scalable, domain-aware AI that bridges the gap between complex data and human interaction."
-  },
-  skills: [
-    { category: "Core AI/ML", items: ["Natural Language Processing", "LLMs (RoBERTa, DeBERTa)", "Reinforcement Learning", "Generative AI", "Computer Vision", "Recommendation Systems"] },
-    { category: "Languages", items: ["Python", "C++", "C", "SQL", "Shell Scripting"] },
-    { category: "Frameworks & Tools", items: ["PyTorch", "HuggingFace", "Scikit-learn", "NLTK", "CUDA", "Docker", "Git"] },
-    { category: "Platforms", items: ["Linux (Ubuntu)", "MacOS", "Jupyter"] }
-  ],
-  experience: [
-    {
-      id: 1,
-      role: "Ph.D. Research Scholar",
-      org: "IIT Roorkee",
-      period: "Feb 2021 - Present",
-      desc: "Conducting cutting-edge research in Task-oriented Dialogue Systems. Teaching Assistant for UG/PG courses.",
-      type: "work"
-    },
-    {
-      id: 2,
-      role: "Ph.D. Research Intern",
-      org: "Samsung Research India (SRIB)",
-      period: "July 2023 - Jan 2024",
-      desc: "Developed a personalized news recommendation system leveraging advanced LLMs (RoBERTa, DeBERTa, ALBERT).",
-      type: "work"
-    },
-    {
-      id: 3,
-      role: "Junior Research Fellow",
-      org: "IIT Jodhpur",
-      period: "Nov 2019 - Nov 2020",
-      desc: "Worked on 'Design and Fabrication of Indigenous Powder Fed Metal Additive Manufacturing Machine'.",
-      type: "work"
-    },
-     {
-      id: 4,
-      role: "M.Tech (Intelligent Systems)",
-      org: "IIIT Allahabad",
-      period: "2017 - 2019",
-      desc: "Thesis: Plant Seedling Classification Using CNN (VGG-16). CGPA: 6.98",
-      type: "edu"
-    },
-    {
-      id: 5,
-      role: "B.Tech (CSE)",
-      org: "GCET Bikaner",
-      period: "2012 - 2016",
-      desc: "Awarded Scholarship under TFW Scheme. 60.10%",
-      type: "edu"
-    }
-  ],
-  publications: [
-    {
-      title: "Improving Multi-Domain Task-Oriented Dialogue System with Offline RL",
-      venue: "IEEE BigData 2024",
-      status: "Published",
-      desc: "Proposed a novel approach to enhance dialogue systems using offline reinforcement learning techniques."
-    },
-    {
-      title: "DCTOD: End-to-End Task-Oriented Dialogue System",
-      venue: "Computer Speech & Language",
-      status: "Under Review",
-      desc: "Introduced Domain Classification as an auxiliary task to improve end-to-end system performance."
-    },
-    {
-      title: "Scalable TOD Systems with Mixture of Experts",
-      venue: "Knowledge-based Systems",
-      status: "Under Review",
-      desc: "Leveraging MoE architectures to scale dialogue systems efficiently."
-    }
-  ]
-};
-
-// --- ROBUST 3D BACKGROUND (HTML5 CANVAS) ---
-
-const StarfieldCanvas = () => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    let animationFrameId;
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-
-    // Resize handler
-    const handleResize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-    };
-    window.addEventListener('resize', handleResize);
-    handleResize();
-
-    // Star data
-    const stars = [];
-    const numStars = 800;
-    const speed = 2; // Speed of travel
-
-    for (let i = 0; i < numStars; i++) {
-      stars.push({
-        x: Math.random() * width - width / 2,
-        y: Math.random() * height - height / 2,
-        z: Math.random() * width // Depth
-      });
-    }
-
-    // Animation Loop
-    const render = () => {
-      // Clear with trail effect
-      ctx.fillStyle = "rgba(15, 23, 42, 0.4)"; // Slate-900 with opacity for trails
-      ctx.fillRect(0, 0, width, height);
-
-      stars.forEach(star => {
-        // Move star closer
-        star.z -= speed;
-
-        // Reset if it passes screen
-        if (star.z <= 0) {
-          star.z = width;
-          star.x = Math.random() * width - width / 2;
-          star.y = Math.random() * height - height / 2;
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
         }
 
-        // Project 3D to 2D
-        // Perspective formula: x2d = x * (focalLength / z)
-        const scale = 300 / (star.z); 
-        const x2d = (star.x * scale) + width / 2;
-        const y2d = (star.y * scale) + height / 2;
-        
-        // Size grows as it gets closer
-        const size = (1 - star.z / width) * 3;
-        
-        // Color: Fade out as it gets closer to 0 z (optional) or just distance fade
-        const alpha = (1 - star.z / width);
-
-        if (x2d >= 0 && x2d <= width && y2d >= 0 && y2d <= height) {
-           ctx.beginPath();
-           // Cyan glow
-           ctx.fillStyle = `rgba(34, 211, 238, ${alpha})`; 
-           ctx.arc(x2d, y2d, Math.max(0, size), 0, Math.PI * 2);
-           ctx.fill();
+        /* Glassmorphism Utilities */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
         }
-      });
+        
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+        }
 
-      animationFrameId = requestAnimationFrame(render);
-    };
+        /* Canvas Background */
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan-500/30 selection:text-cyan-100">
 
-    render();
+    <!-- 1. 3D Background Canvas -->
+    <canvas id="starfield"></canvas>
 
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full -z-10 bg-slate-900" />;
-};
-
-// --- UI COMPONENTS ---
-
-const Section = ({ children, id, className = "" }) => (
-  <section id={id} className={`min-h-screen w-full flex flex-col justify-center px-6 py-20 relative ${className}`}>
-    {children}
-  </section>
-);
-
-const Card = ({ children, className = "" }) => (
-  <div className={`bg-slate-800/40 backdrop-blur-md border border-slate-700/50 p-6 rounded-xl shadow-xl hover:bg-slate-800/60 transition-all duration-300 hover:scale-[1.02] hover:border-cyan-500/30 ${className}`}>
-    {children}
-  </div>
-);
-
-const Badge = ({ children }) => (
-  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-900/30 text-cyan-300 border border-cyan-800/50 mr-2 mb-2 inline-block">
-    {children}
-  </span>
-);
-
-const TimelineItem = ({ data, index }) => {
-    const isLeft = index % 2 === 0;
-    return (
-        <div className={`flex flex-col md:flex-row items-center justify-between mb-8 w-full ${isLeft ? 'md:flex-row-reverse' : ''}`}>
-            <div className="hidden md:block w-5/12" />
-            
-            <div className="z-10 flex items-center justify-center w-8 h-8 bg-cyan-500 rounded-full ring-4 ring-slate-900 shrink-0 mb-4 md:mb-0">
-                {data.type === 'work' ? <Briefcase size={16} className="text-white" /> : <GraduationCap size={16} className="text-white" />}
-            </div>
-
-            <div className="w-full md:w-5/12 pl-0 md:pl-0">
-                <Card className={`${isLeft ? 'md:text-right' : 'md:text-left'} text-center`}>
-                    <h3 className="text-xl font-bold text-white">{data.role}</h3>
-                    <p className="text-cyan-400 font-medium">{data.org}</p>
-                    <p className="text-slate-400 text-sm mb-2">{data.period}</p>
-                    <p className="text-slate-300 text-sm">{data.desc}</p>
-                </Card>
-            </div>
-        </div>
-    )
-}
-
-const WhatsAppButton = () => {
-  const message = "Hello Dharmendra, I have visited your portfolio and I want to discuss about Data Science";
-  const encodedMessage = encodeURIComponent(message);
-  const whatsappUrl = `https://wa.me/${PORTFOLIO_DATA.personal.contact.whatsapp}?text=${encodedMessage}`;
-
-  return (
-    <a 
-      href={whatsappUrl} 
-      target="_blank" 
-      rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-green-500/30 transition-all transform hover:scale-105 group font-semibold"
-    >
-      <MessageCircle size={24} className="fill-current" />
-      <span className="hidden group-hover:block transition-all duration-300">Chat on WhatsApp</span>
+    <!-- 2. WhatsApp Floating Button -->
+    <a href="https://wa.me/918386989758?text=Hello%20Dharmendra%2C%20I%20have%20visited%20your%20portfolio%20and%20I%20want%20to%20discuss%20about%20Data%20Science" 
+       target="_blank" 
+       class="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-green-500/30 transition-all transform hover:scale-105 group font-semibold no-underline">
+        <i class="fa-brands fa-whatsapp text-2xl"></i>
+        <span class="hidden group-hover:block transition-all duration-300">Chat on WhatsApp</span>
     </a>
-  );
-};
 
-// --- DATA ANALYTICS COMPONENT ---
-
-const VisitorAnalytics = ({ user }) => {
-  const [stats, setStats] = useState([]);
-  const [userCountry, setUserCountry] = useState(null);
-
-  // 1. Initial Load: Authenticate & Register Visit
-  useEffect(() => {
-    if (!user) return;
-
-    const registerVisit = async () => {
-      // Check local storage to avoid spamming counts on refresh
-      const hasVisited = localStorage.getItem(`visited_${appId}_v1`);
-      
-      try {
-        // Fetch user's country from a free IP API
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
-        const country = data.country_name || "Unknown";
-        setUserCountry(country);
-
-        if (!hasVisited) {
-          // Increment count in Firestore
-          const statsRef = doc(db, 'artifacts', appId, 'public', 'data', 'visitor_stats', country);
-          await setDoc(statsRef, { 
-            country: country,
-            count: increment(1),
-            last_visit: new Date().toISOString()
-          }, { merge: true });
-          
-          localStorage.setItem(`visited_${appId}_v1`, 'true');
-        }
-      } catch (err) {
-        console.error("Failed to register visit:", err);
-      }
-    };
-
-    registerVisit();
-  }, [user]);
-
-  // 2. Real-time Listener: Fetch Global Stats
-  useEffect(() => {
-    if (!user) return;
-
-    const statsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'visitor_stats');
-    const unsubscribe = onSnapshot(statsCollection, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      // Sort in memory to avoid index requirement errors
-      const sorted = data.sort((a, b) => (b.count || 0) - (a.count || 0));
-      setStats(sorted);
-    }, (error) => {
-        console.log("Analytics listener error (likely permission or index):", error);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  return (
-    <div className="w-full max-w-4xl mx-auto mt-12 mb-8 animate-fade-in-up">
-      <Card className="bg-slate-900/60 border-cyan-900/50">
-        <div className="flex items-center gap-3 mb-6 border-b border-slate-700 pb-4">
-          <Activity className="text-cyan-400" />
-          <div>
-            <h3 className="text-xl font-bold text-white">Live Visitor Analytics</h3>
-            <p className="text-xs text-slate-400">Real-time portfolio traffic by country</p>
-          </div>
-          {userCountry && (
-             <div className="ml-auto flex items-center gap-2 text-xs text-slate-400 bg-slate-800 px-3 py-1 rounded-full">
-                <MapPin size={12} className="text-red-400" />
-                You are visiting from <span className="text-white font-semibold">{userCountry}</span>
-             </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {stats.length === 0 ? (
-             <div className="col-span-full text-center text-slate-500 py-4 italic">Waiting for data...</div>
-          ) : (
-            stats.map((stat, idx) => (
-              <div key={stat.id} className="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                <div className="flex items-center gap-2">
-                   <Globe size={14} className={idx === 0 ? "text-yellow-400" : idx === 1 ? "text-slate-300" : idx === 2 ? "text-amber-600" : "text-slate-500"} />
-                   <span className="text-sm font-medium text-slate-200 truncate max-w-[100px]">{stat.country}</span>
-                </div>
-                <span className="text-xs font-bold bg-cyan-900/50 text-cyan-300 px-2 py-1 rounded">
-                  {stat.count || 0}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </Card>
-    </div>
-  );
-};
-
-// --- MAIN APP COMPONENT ---
-
-export default function Portfolio() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('home');
-  const [user, setUser] = useState(null);
-
-  // Auth Initialization
-  useEffect(() => {
-    const initAuth = async () => {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else {
-        await signInAnonymously(auth);
-      }
-    };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
-  }, []);
-
-  // Smooth scroll
-  const scrollTo = (id) => {
-    setIsMenuOpen(false);
-    const element = document.getElementById(id);
-    if (element) element.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // Scroll spy
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = ['home', 'about', 'experience', 'projects', 'contact'];
-      const scrollPosition = window.scrollY + 200;
-
-      sections.forEach(section => {
-        const element = document.getElementById(section);
-        if (element && element.offsetTop <= scrollPosition && (element.offsetTop + element.offsetHeight) > scrollPosition) {
-          setActiveSection(section);
-        }
-      });
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  return (
-    <div className="text-slate-200 antialiased selection:bg-cyan-500/30 selection:text-cyan-100 overflow-x-hidden font-sans">
-      <StarfieldCanvas />
-      
-      {/* Fixed WhatsApp Button */}
-      <WhatsAppButton />
-
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-40 bg-slate-900/80 backdrop-blur-lg border-b border-slate-800 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 cursor-pointer" onClick={() => scrollTo('home')}>
-            DP
-          </div>
-
-          {/* Desktop Menu */}
-          <div className="hidden md:flex space-x-8">
-            {['About', 'Experience', 'Projects', 'Contact'].map((item) => (
-              <button
-                key={item}
-                onClick={() => scrollTo(item.toLowerCase())}
-                className={`text-sm font-medium transition-colors hover:text-cyan-400 ${activeSection === item.toLowerCase() ? 'text-cyan-400' : 'text-slate-400'}`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
-          {/* Mobile Menu Toggle */}
-          <button className="md:hidden text-slate-300" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <X /> : <Menu />}
-          </button>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-slate-900 border-b border-slate-800 px-6 py-4 space-y-4">
-            {['About', 'Experience', 'Projects', 'Contact'].map((item) => (
-              <button
-                key={item}
-                onClick={() => scrollTo(item.toLowerCase())}
-                className="block w-full text-left text-slate-300 hover:text-cyan-400 py-2"
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        )}
-      </nav>
-
-      {/* Hero Section */}
-      <Section id="home" className="items-center text-center pt-32">
-        <div className="space-y-6 max-w-4xl z-10 animate-fade-in-up">
-            <div className="inline-block animate-pulse">
-                <Brain className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
+    <!-- 3. Navigation Bar -->
+    <nav class="fixed top-0 w-full z-40 glass-nav transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 cursor-pointer" onclick="scrollToSection('home')">
+                DP
             </div>
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-white leading-tight">
-                Hi, I'm <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">{PORTFOLIO_DATA.personal.name}</span>
+
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex space-x-8">
+                <button onclick="scrollToSection('about')" class="text-sm font-medium text-slate-400 hover:text-cyan-400 transition-colors">About</button>
+                <button onclick="scrollToSection('experience')" class="text-sm font-medium text-slate-400 hover:text-cyan-400 transition-colors">Experience</button>
+                <button onclick="scrollToSection('projects')" class="text-sm font-medium text-slate-400 hover:text-cyan-400 transition-colors">Projects</button>
+                <button onclick="scrollToSection('contact')" class="text-sm font-medium text-slate-400 hover:text-cyan-400 transition-colors">Contact</button>
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <button class="md:hidden text-slate-300 focus:outline-none" id="mobile-menu-btn">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div class="hidden md:hidden bg-slate-900 border-b border-slate-800 px-6 py-4 space-y-4" id="mobile-menu">
+            <button onclick="scrollToSection('about')" class="block w-full text-left text-slate-300 hover:text-cyan-400 py-2">About</button>
+            <button onclick="scrollToSection('experience')" class="block w-full text-left text-slate-300 hover:text-cyan-400 py-2">Experience</button>
+            <button onclick="scrollToSection('projects')" class="block w-full text-left text-slate-300 hover:text-cyan-400 py-2">Projects</button>
+            <button onclick="scrollToSection('contact')" class="block w-full text-left text-slate-300 hover:text-cyan-400 py-2">Contact</button>
+        </div>
+    </nav>
+
+    <!-- 4. Hero Section -->
+    <section id="home" class="min-h-screen w-full flex flex-col justify-center items-center text-center px-6 pt-20 relative">
+        <div class="space-y-6 max-w-4xl z-10 animate-fade-in-up">
+            <div class="inline-block animate-pulse">
+                <i class="fa-solid fa-brain text-6xl text-cyan-400 mb-4"></i>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white leading-tight">
+                Hi, I'm <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Dharmendra Prajapat</span>
             </h1>
-            <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto">
-                {PORTFOLIO_DATA.personal.title}
+            <p class="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto">
+                AI Researcher & Data Scientist
             </p>
-            <p className="text-md md:text-lg text-slate-500">
-                {PORTFOLIO_DATA.personal.tagline}
+            <p class="text-md md:text-lg text-slate-500">
+                Specializing in LLMs, Dialogue Systems, and Reinforcement Learning
             </p>
             
-            <div className="flex justify-center space-x-4 pt-8">
-                <button 
-                    onClick={() => scrollTo('projects')}
-                    className="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-full font-medium transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/20"
-                >
+            <div class="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+                <button onclick="scrollToSection('projects')" class="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 text-white rounded-full font-medium transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/20">
                     View Research
                 </button>
-                <button 
-                    onClick={() => scrollTo('contact')}
-                    className="px-8 py-3 bg-transparent border border-slate-600 hover:border-cyan-400 text-slate-300 hover:text-cyan-400 rounded-full font-medium transition-all"
-                >
+                <button onclick="scrollToSection('contact')" class="px-8 py-3 bg-transparent border border-slate-600 hover:border-cyan-400 text-slate-300 hover:text-cyan-400 rounded-full font-medium transition-all">
                     Contact Me
                 </button>
             </div>
         </div>
-
-        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce cursor-pointer" onClick={() => scrollTo('about')}>
-            <ChevronDown className="text-slate-500" />
+        
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce-slow cursor-pointer text-slate-500 hover:text-cyan-400" onclick="scrollToSection('about')">
+            <i class="fa-solid fa-chevron-down text-2xl"></i>
         </div>
-      </Section>
+    </section>
 
-      {/* About & Skills */}
-      <Section id="about" className="max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-                <h2 className="text-3xl font-bold text-white flex items-center gap-2">
-                    <span className="w-10 h-1 bg-cyan-500 rounded-full"></span> About Me
-                </h2>
-                <Card className="bg-gradient-to-br from-slate-800/50 to-slate-900/50">
-                    <p className="text-lg leading-relaxed text-slate-300">
-                        {PORTFOLIO_DATA.personal.about}
-                    </p>
-                </Card>
-                <div className="grid grid-cols-2 gap-4">
-                     <Card className="text-center p-4">
-                        <div className="text-3xl font-bold text-cyan-400">3+</div>
-                        <div className="text-sm text-slate-400">Years Research</div>
-                     </Card>
-                     <Card className="text-center p-4">
-                        <div className="text-3xl font-bold text-purple-400">4+</div>
-                        <div className="text-sm text-slate-400">Publications</div>
-                     </Card>
+    <!-- 5. About & Skills Section -->
+    <section id="about" class="min-h-screen w-full flex flex-col justify-center px-6 py-20">
+        <div class="max-w-7xl mx-auto w-full">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                
+                <!-- About Text -->
+                <div class="space-y-6">
+                    <h2 class="text-3xl font-bold text-white flex items-center gap-2">
+                        <span class="w-10 h-1 bg-cyan-500 rounded-full"></span> About Me
+                    </h2>
+                    <div class="glass-card p-6 rounded-xl">
+                        <p class="text-lg leading-relaxed text-slate-300">
+                            I am a Ph.D. Research Scholar at the Data Mining Research Lab, IIT Roorkee. My research focuses on pushing the boundaries of Natural Language Processing, specifically in Task-oriented Dialogue Systems, Recommendation Systems, and Large Language Models (LLMs). I aim to build scalable, domain-aware AI that bridges the gap between complex data and human interaction.
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="glass-card text-center p-4 rounded-xl">
+                            <div class="text-3xl font-bold text-cyan-400">3+</div>
+                            <div class="text-sm text-slate-400">Years Research</div>
+                        </div>
+                        <div class="glass-card text-center p-4 rounded-xl">
+                            <div class="text-3xl font-bold text-purple-400">4+</div>
+                            <div class="text-sm text-slate-400">Publications</div>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div>
-                 <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-2 md:justify-end">
-                    Technical Arsenal <span className="w-10 h-1 bg-purple-500 rounded-full"></span>
-                </h2>
-                <div className="space-y-6">
-                    {PORTFOLIO_DATA.skills.map((skillSet, idx) => (
-                        <div key={idx}>
-                            <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">{skillSet.category}</h3>
-                            <div className="flex flex-wrap">
-                                {skillSet.items.map(item => (
-                                    <Badge key={item}>{item}</Badge>
-                                ))}
+                <!-- Skills -->
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-6 flex items-center gap-2 md:justify-end">
+                        Technical Arsenal <span class="w-10 h-1 bg-purple-500 rounded-full"></span>
+                    </h2>
+                    <div class="space-y-6">
+                        <!-- Skill Group 1 -->
+                        <div>
+                            <h3 class="text-sm uppercase tracking-wider text-slate-500 mb-3">Core AI/ML</h3>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-900/30 text-cyan-300 border border-cyan-800/50">NLP</span>
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-900/30 text-cyan-300 border border-cyan-800/50">LLMs (RoBERTa, DeBERTa)</span>
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-900/30 text-cyan-300 border border-cyan-800/50">Reinforcement Learning</span>
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-900/30 text-cyan-300 border border-cyan-800/50">Generative AI</span>
                             </div>
                         </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-      </Section>
-
-      {/* Experience Journey */}
-      <Section id="experience" className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">The Journey</h2>
-             <p className="text-slate-400">My academic and professional path in Data Science</p>
-        </div>
-
-        <div className="relative">
-            {/* Vertical Line */}
-            <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-700" />
-            
-            <div className="space-y-4">
-                {PORTFOLIO_DATA.experience.map((item, index) => (
-                    <TimelineItem key={item.id} data={item} index={index} />
-                ))}
-            </div>
-        </div>
-      </Section>
-
-      {/* Projects & Publications */}
-      <Section id="projects" className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12">
-            <div>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Research & Publications</h2>
-                <p className="text-slate-400">Key contributions to Conversational AI and LLMs</p>
-            </div>
-            <a href="https://scholar.google.com" target="_blank" rel="noreferrer" className="hidden md:flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors">
-                Google Scholar <ExternalLink size={16} />
-            </a>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PORTFOLIO_DATA.publications.map((pub, idx) => (
-                <Card key={idx} className="flex flex-col justify-between h-full group">
-                    <div>
-                        <div className="flex justify-between items-start mb-4">
-                            <FileText className="text-cyan-500 group-hover:text-purple-400 transition-colors" size={32} />
-                            <span className={`text-xs px-2 py-1 rounded border ${pub.status === 'Published' ? 'bg-green-900/30 text-green-300 border-green-800' : 'bg-amber-900/30 text-amber-300 border-amber-800'}`}>
-                                {pub.status}
-                            </span>
+                        <!-- Skill Group 2 -->
+                        <div>
+                            <h3 class="text-sm uppercase tracking-wider text-slate-500 mb-3">Languages & Tools</h3>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-900/30 text-cyan-300 border border-cyan-800/50">Python</span>
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-900/30 text-cyan-300 border border-cyan-800/50">C++</span>
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-900/30 text-cyan-300 border border-cyan-800/50">PyTorch</span>
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-900/30 text-cyan-300 border border-cyan-800/50">HuggingFace</span>
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-900/30 text-cyan-300 border border-cyan-800/50">Docker</span>
+                            </div>
                         </div>
-                        <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-cyan-400 transition-colors">{pub.title}</h3>
-                        <p className="text-sm font-semibold text-slate-400 mb-4">{pub.venue}</p>
-                        <p className="text-slate-300 text-sm leading-relaxed">{pub.desc}</p>
                     </div>
-                </Card>
-            ))}
-            
-             <Card className="flex flex-col justify-between h-full group">
-                <div>
-                     <div className="flex justify-between items-start mb-4">
-                        <Cpu className="text-purple-500" size={32} />
-                        <span className="text-xs px-2 py-1 rounded border bg-purple-900/30 text-purple-300 border-purple-800">
-                            Robotics
-                        </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-100 mb-2">Robotic Pick & Place</h3>
-                    <p className="text-sm font-semibold text-slate-400 mb-4">Simulation Project</p>
-                    <p className="text-slate-300 text-sm leading-relaxed">
-                        Simulation of Kuka210 manipulator using MoveIt framework and Gazebo. Implemented path planning and inverse kinematics for automated bottle sorting.
-                    </p>
                 </div>
-            </Card>
+            </div>
         </div>
-      </Section>
+    </section>
 
-      {/* Footer / Contact */}
-      <footer id="contact" className="bg-slate-900 border-t border-slate-800 pt-16 pb-24 relative z-10">
-        
-        {/* Live Visitor Stats Section */}
-        <VisitorAnalytics user={user} />
+    <!-- 6. Experience Timeline -->
+    <section id="experience" class="min-h-screen w-full flex flex-col justify-center px-6 py-20">
+        <div class="max-w-6xl mx-auto w-full">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">The Journey</h2>
+                <p class="text-slate-400">My academic and professional path in Data Science</p>
+            </div>
 
-        <div className="max-w-4xl mx-auto px-6 text-center">
-            <h2 className="text-3xl font-bold text-white mb-8">Let's Collaborate</h2>
-            <div className="flex flex-col md:flex-row justify-center items-center gap-6 mb-12">
-                <a href={`mailto:${PORTFOLIO_DATA.personal.contact.email}`} className="flex items-center gap-3 px-6 py-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors w-full md:w-auto">
-                    <Mail className="text-cyan-400" />
-                    <span className="text-slate-300">{PORTFOLIO_DATA.personal.contact.email}</span>
+            <div class="relative">
+                <!-- Vertical Line -->
+                <div class="hidden md:block absolute left-1/2 transform -translate-x-1/2 w-0.5 h-full bg-slate-700"></div>
+
+                <!-- Timeline Items -->
+                <div class="space-y-8" id="timeline-container">
+                    <!-- Items injected by JS for cleanliness, or written below -->
+                    
+                    <!-- Item 1 -->
+                    <div class="flex flex-col md:flex-row items-center justify-between w-full md:flex-row-reverse">
+                        <div class="hidden md:block w-5/12"></div>
+                        <div class="z-10 flex items-center justify-center w-8 h-8 bg-cyan-500 rounded-full ring-4 ring-slate-900 shrink-0 mb-4 md:mb-0">
+                            <i class="fa-solid fa-briefcase text-white text-xs"></i>
+                        </div>
+                        <div class="w-full md:w-5/12 text-center md:text-right">
+                            <div class="glass-card p-6 rounded-xl hover:bg-slate-800/60 transition-all">
+                                <h3 class="text-xl font-bold text-white">Ph.D. Research Scholar</h3>
+                                <p class="text-cyan-400 font-medium">IIT Roorkee</p>
+                                <p class="text-slate-400 text-sm mb-2">Feb 2021 - Present</p>
+                                <p class="text-slate-300 text-sm">Conducting research in Task-oriented Dialogue Systems. Teaching Assistant for UG/PG courses.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="flex flex-col md:flex-row items-center justify-between w-full">
+                        <div class="hidden md:block w-5/12"></div>
+                        <div class="z-10 flex items-center justify-center w-8 h-8 bg-cyan-500 rounded-full ring-4 ring-slate-900 shrink-0 mb-4 md:mb-0">
+                            <i class="fa-solid fa-briefcase text-white text-xs"></i>
+                        </div>
+                        <div class="w-full md:w-5/12 text-center md:text-left">
+                            <div class="glass-card p-6 rounded-xl hover:bg-slate-800/60 transition-all">
+                                <h3 class="text-xl font-bold text-white">Ph.D. Research Intern</h3>
+                                <p class="text-cyan-400 font-medium">Samsung Research India (SRIB)</p>
+                                <p class="text-slate-400 text-sm mb-2">July 2023 - Jan 2024</p>
+                                <p class="text-slate-300 text-sm">Developed a personalized news recommendation system leveraging advanced LLMs (RoBERTa, DeBERTa, ALBERT).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- Item 3 -->
+                     <div class="flex flex-col md:flex-row items-center justify-between w-full md:flex-row-reverse">
+                        <div class="hidden md:block w-5/12"></div>
+                        <div class="z-10 flex items-center justify-center w-8 h-8 bg-cyan-500 rounded-full ring-4 ring-slate-900 shrink-0 mb-4 md:mb-0">
+                            <i class="fa-solid fa-briefcase text-white text-xs"></i>
+                        </div>
+                        <div class="w-full md:w-5/12 text-center md:text-right">
+                            <div class="glass-card p-6 rounded-xl hover:bg-slate-800/60 transition-all">
+                                <h3 class="text-xl font-bold text-white">Junior Research Fellow</h3>
+                                <p class="text-cyan-400 font-medium">IIT Jodhpur</p>
+                                <p class="text-slate-400 text-sm mb-2">Nov 2019 - Nov 2020</p>
+                                <p class="text-slate-300 text-sm">Worked on 'Design and Fabrication of Indigenous Powder Fed Metal Additive Manufacturing Machine'.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 4 -->
+                    <div class="flex flex-col md:flex-row items-center justify-between w-full">
+                        <div class="hidden md:block w-5/12"></div>
+                        <div class="z-10 flex items-center justify-center w-8 h-8 bg-cyan-500 rounded-full ring-4 ring-slate-900 shrink-0 mb-4 md:mb-0">
+                            <i class="fa-solid fa-graduation-cap text-white text-xs"></i>
+                        </div>
+                        <div class="w-full md:w-5/12 text-center md:text-left">
+                            <div class="glass-card p-6 rounded-xl hover:bg-slate-800/60 transition-all">
+                                <h3 class="text-xl font-bold text-white">M.Tech (Intelligent Systems)</h3>
+                                <p class="text-cyan-400 font-medium">IIIT Allahabad</p>
+                                <p class="text-slate-400 text-sm mb-2">2017 - 2019</p>
+                                <p class="text-slate-300 text-sm">Thesis: Plant Seedling Classification Using CNN (VGG-16). CGPA: 6.98</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. Projects & Publications -->
+    <section id="projects" class="min-h-screen w-full flex flex-col justify-center px-6 py-20">
+        <div class="max-w-7xl mx-auto w-full">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-12">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-2">Research & Publications</h2>
+                    <p class="text-slate-400">Key contributions to Conversational AI and LLMs</p>
+                </div>
+                <a href="https://scholar.google.com" target="_blank" class="hidden md:flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors">
+                    Google Scholar <i class="fa-solid fa-arrow-up-right-from-square"></i>
                 </a>
-                 <a href={PORTFOLIO_DATA.personal.contact.website} target="_blank" rel="noreferrer" className="flex items-center gap-3 px-6 py-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors w-full md:w-auto">
-                    <Github className="text-white" />
-                    <span className="text-slate-300">GitHub / Portfolio</span>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Pub 1 -->
+                <div class="glass-card p-6 rounded-xl flex flex-col justify-between h-full hover:scale-[1.02] transition-transform duration-300">
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <i class="fa-regular fa-file-lines text-cyan-500 text-3xl"></i>
+                            <span class="text-xs px-2 py-1 rounded border bg-green-900/30 text-green-300 border-green-800">Published</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 mb-2 hover:text-cyan-400 transition-colors">Improving Multi-Domain Task-Oriented Dialogue System with Offline RL</h3>
+                        <p class="text-sm font-semibold text-slate-400 mb-4">IEEE BigData 2024</p>
+                        <p class="text-slate-300 text-sm leading-relaxed">Proposed a novel approach to enhance dialogue systems using offline reinforcement learning techniques.</p>
+                    </div>
+                </div>
+
+                <!-- Pub 2 -->
+                <div class="glass-card p-6 rounded-xl flex flex-col justify-between h-full hover:scale-[1.02] transition-transform duration-300">
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <i class="fa-regular fa-file-lines text-cyan-500 text-3xl"></i>
+                            <span class="text-xs px-2 py-1 rounded border bg-amber-900/30 text-amber-300 border-amber-800">Under Review</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 mb-2 hover:text-cyan-400 transition-colors">DCTOD: End-to-End Task-Oriented Dialogue System</h3>
+                        <p class="text-sm font-semibold text-slate-400 mb-4">Computer Speech & Language</p>
+                        <p class="text-slate-300 text-sm leading-relaxed">Introduced Domain Classification as an auxiliary task to improve end-to-end system performance.</p>
+                    </div>
+                </div>
+
+                <!-- Pub 3 -->
+                <div class="glass-card p-6 rounded-xl flex flex-col justify-between h-full hover:scale-[1.02] transition-transform duration-300">
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <i class="fa-regular fa-file-lines text-cyan-500 text-3xl"></i>
+                            <span class="text-xs px-2 py-1 rounded border bg-amber-900/30 text-amber-300 border-amber-800">Under Review</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 mb-2 hover:text-cyan-400 transition-colors">Scalable TOD Systems with Mixture of Experts</h3>
+                        <p class="text-sm font-semibold text-slate-400 mb-4">Knowledge-based Systems</p>
+                        <p class="text-slate-300 text-sm leading-relaxed">Leveraging MoE architectures to scale dialogue systems efficiently.</p>
+                    </div>
+                </div>
+                
+                 <!-- Robotics Project -->
+                 <div class="glass-card p-6 rounded-xl flex flex-col justify-between h-full hover:scale-[1.02] transition-transform duration-300">
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <i class="fa-solid fa-robot text-purple-500 text-3xl"></i>
+                            <span class="text-xs px-2 py-1 rounded border bg-purple-900/30 text-purple-300 border-purple-800">Robotics</span>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 mb-2">Robotic Pick & Place</h3>
+                        <p class="text-sm font-semibold text-slate-400 mb-4">Simulation Project</p>
+                        <p class="text-slate-300 text-sm leading-relaxed">Simulation of Kuka210 manipulator using MoveIt framework and Gazebo. Implemented path planning.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. Footer, Contact & Analytics -->
+    <footer id="contact" class="bg-slate-900 border-t border-slate-800 pt-16 pb-24 relative z-10">
+        
+        <!-- Visitor Analytics Widget -->
+        <div class="max-w-4xl mx-auto px-6 mb-12">
+            <div class="glass-card p-6 rounded-xl">
+                <div class="flex items-center gap-3 mb-6 border-b border-slate-700 pb-4">
+                    <i class="fa-solid fa-chart-line text-cyan-400"></i>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Live Visitor Analytics</h3>
+                        <p class="text-xs text-slate-400">Real-time portfolio traffic by country</p>
+                    </div>
+                    <div class="ml-auto flex items-center gap-2 text-xs text-slate-400 bg-slate-800 px-3 py-1 rounded-full" id="user-location-badge" style="display:none;">
+                        <i class="fa-solid fa-location-dot text-red-400"></i>
+                        You are visiting from <span class="text-white font-semibold" id="user-country-text">...</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-container">
+                    <div class="col-span-full text-center text-slate-500 py-4 italic">Connecting to live data...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <h2 class="text-3xl font-bold text-white mb-8">Let's Collaborate</h2>
+            <div class="flex flex-col md:flex-row justify-center items-center gap-6 mb-12">
+                <a href="mailto:dk008652@gmail.com" class="flex items-center gap-3 px-6 py-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors w-full md:w-auto no-underline text-white">
+                    <i class="fa-solid fa-envelope text-cyan-400"></i>
+                    <span class="text-slate-300">dk008652@gmail.com</span>
+                </a>
+                 <a href="https://github.com/dk008652" target="_blank" class="flex items-center gap-3 px-6 py-4 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors w-full md:w-auto no-underline text-white">
+                    <i class="fa-brands fa-github"></i>
+                    <span class="text-slate-300">GitHub Profile</span>
                 </a>
             </div>
             
-            <div className="flex justify-center gap-6 text-slate-500">
-                <p>&copy; {new Date().getFullYear()} Dharmendra Prajapat. All rights reserved.</p>
+            <div class="flex justify-center gap-6 text-slate-500">
+                <p>&copy; 2025 Dharmendra Prajapat. All rights reserved.</p>
             </div>
         </div>
-      </footer>
-      
-      {/* Global styles for custom scrollbar */}
-      <style>{`
-        ::-webkit-scrollbar {
-          width: 8px;
+    </footer>
+
+    <!-- LOGIC SCRIPTS -->
+    
+    <!-- 1. Starfield Animation (Vanilla JS) -->
+    <script>
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        });
+
+        const stars = [];
+        const numStars = 800;
+        const speed = 1.5;
+
+        // Initialize stars
+        for (let i = 0; i < numStars; i++) {
+            stars.push({
+                x: Math.random() * width - width / 2,
+                y: Math.random() * height - height / 2,
+                z: Math.random() * width
+            });
         }
-        ::-webkit-scrollbar-track {
-          background: #0f172a; 
+
+        function animate() {
+            // Trail effect: fill with low opacity
+            ctx.fillStyle = "rgba(15, 23, 42, 0.4)"; 
+            ctx.fillRect(0, 0, width, height);
+
+            stars.forEach(star => {
+                star.z -= speed;
+
+                if (star.z <= 0) {
+                    star.z = width;
+                    star.x = Math.random() * width - width / 2;
+                    star.y = Math.random() * height - height / 2;
+                }
+
+                // 3D to 2D Projection
+                const scale = 300 / star.z;
+                const x2d = (star.x * scale) + width / 2;
+                const y2d = (star.y * scale) + height / 2;
+                
+                // Opacity based on distance
+                const alpha = Math.max(0, 1 - star.z / width);
+                const size = (1 - star.z / width) * 2.5;
+
+                if (x2d >= 0 && x2d <= width && y2d >= 0 && y2d <= height) {
+                    ctx.beginPath();
+                    ctx.fillStyle = `rgba(34, 211, 238, ${alpha})`; // Cyan color
+                    ctx.arc(x2d, y2d, Math.max(0.1, size), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            requestAnimationFrame(animate);
         }
-        ::-webkit-scrollbar-thumb {
-          background: #334155; 
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #475569; 
-        }
-        
-        @keyframes fade-in-up {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
+        animate();
+    </script>
+
+    <!-- 2. UI Logic (Menu & Scroll) -->
+    <script>
+        // Smooth scrolling
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+                // Close mobile menu if open
+                const mobileMenu = document.getElementById('mobile-menu');
+                if(!mobileMenu.classList.contains('hidden')) {
+                    mobileMenu.classList.add('hidden');
+                }
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
+
+        // Mobile Menu Toggle
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
         
-        .animate-fade-in-up {
-            animation: fade-in-up 0.8s ease-out forwards;
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+            const icon = btn.querySelector('i');
+            if(menu.classList.contains('hidden')) {
+                icon.classList.remove('fa-xmark');
+                icon.classList.add('fa-bars');
+            } else {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-xmark');
+            }
+        });
+    </script>
+
+    <!-- 3. Firebase & Analytics (ES Module) -->
+    <script type="module">
+        // Import Firebase SDKs from CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // --- REPLACE THESE VALUES WITH YOUR FIREBASE CONFIG ---
+        // 1. Go to console.firebase.google.com -> Create Project
+        // 2. Add Web App -> Copy keys here
+        const firebaseConfig = {
+            apiKey: "REPLACE_WITH_YOUR_API_KEY",
+            authDomain: "REPLACE_WITH_YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
+            storageBucket: "REPLACE_WITH_YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
+            appId: "REPLACE_WITH_YOUR_APP_ID"
+        };
+        // ----------------------------------------------------
+
+        // Only run if config is valid (simple check)
+        if (firebaseConfig.apiKey !== "REPLACE_WITH_YOUR_API_KEY") {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            const appId = "my-portfolio-v1"; // Unique ID for your app
+
+            async function initAnalytics() {
+                try {
+                    // 1. Anonymous Auth
+                    await signInAnonymously(auth);
+
+                    // 2. Get User Location
+                    let country = "Unknown";
+                    try {
+                        const res = await fetch('https://ipapi.co/json/');
+                        const data = await res.json();
+                        if(data.country_name) country = data.country_name;
+                        
+                        // Show badge
+                        document.getElementById('user-country-text').innerText = country;
+                        document.getElementById('user-location-badge').style.display = "flex";
+                    } catch(e) { console.log("IP fetch failed", e); }
+
+                    // 3. Register Visit (once per session)
+                    const visitedKey = `visited_${appId}`;
+                    if(!sessionStorage.getItem(visitedKey)) {
+                        const statsRef = doc(db, 'portfolio_stats', 'visitors', 'countries', country);
+                        await setDoc(statsRef, {
+                            country: country,
+                            count: increment(1),
+                            last_visit: new Date().toISOString()
+                        }, { merge: true });
+                        sessionStorage.setItem(visitedKey, 'true');
+                    }
+
+                    // 4. Listen for Real-time Updates
+                    const statsCol = collection(db, 'portfolio_stats', 'visitors', 'countries');
+                    onSnapshot(statsCol, (snapshot) => {
+                        const statsContainer = document.getElementById('stats-container');
+                        statsContainer.innerHTML = ''; // clear loading text
+
+                        const data = [];
+                        snapshot.forEach(doc => data.push(doc.data()));
+                        
+                        // Sort by count
+                        data.sort((a, b) => (b.count || 0) - (a.count || 0));
+
+                        if(data.length === 0) {
+                            statsContainer.innerHTML = '<div class="col-span-full text-center text-slate-500">No data yet.</div>';
+                            return;
+                        }
+
+                        data.forEach((stat, idx) => {
+                            let iconColor = "text-slate-500";
+                            if(idx===0) iconColor = "text-yellow-400";
+                            if(idx===1) iconColor = "text-slate-300";
+                            if(idx===2) iconColor = "text-amber-600";
+
+                            const html = `
+                                <div class="flex justify-between items-center bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
+                                    <div class="flex items-center gap-2 overflow-hidden">
+                                        <i class="fa-solid fa-earth-americas ${iconColor}"></i>
+                                        <span class="text-sm font-medium text-slate-200 truncate">${stat.country}</span>
+                                    </div>
+                                    <span class="text-xs font-bold bg-cyan-900/50 text-cyan-300 px-2 py-1 rounded ml-2">
+                                        ${stat.count || 0}
+                                    </span>
+                                </div>
+                            `;
+                            statsContainer.insertAdjacentHTML('beforeend', html);
+                        });
+                    });
+
+                } catch (error) {
+                    console.error("Firebase Error:", error);
+                    document.getElementById('stats-container').innerHTML = 
+                        '<div class="col-span-full text-center text-red-400 text-sm">Analytics Config Missing. Check index.html code.</div>';
+                }
+            }
+
+            initAnalytics();
+        } else {
+            console.log("Firebase not configured. Analytics disabled.");
+            document.getElementById('stats-container').innerHTML = 
+                '<div class="col-span-full text-center text-slate-500 text-sm p-4 border border-dashed border-slate-700 rounded-lg">To enable Analytics, open index.html and add your Firebase Config keys at the bottom.</div>';
         }
-      `}</style>
-    </div>
-  );
-}
+    </script>
+</body>
+</html>
