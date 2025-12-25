@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+8k,<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -700,15 +700,16 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+           
         // CONFIG (Replace placeholders with real keys if deploying)
         const firebaseConfig = {
-            apiKey: "REPLACE_WITH_YOUR_API_KEY",
-            authDomain: "REPLACE_WITH_YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
-            storageBucket: "REPLACE_WITH_YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
-            appId: "REPLACE_WITH_YOUR_APP_ID"
-        };
+    apiKey: "AIzaSyArNyW9FA7I9g7Kep3RozvPFd0XojBIXyg",
+    authDomain: "dhamsa-e22a3.firebaseapp.com",
+    projectId: "dhamsa-e22a3",
+    storageBucket: "dhamsa-e22a3.firebasestorage.app",
+    messagingSenderId: "836317626812",
+    appId: "1:836317626812:web:b0f9fbffd481efba49ebb9"
+  };
 
         if (firebaseConfig.apiKey !== "REPLACE_WITH_YOUR_API_KEY") {
             const app = initializeApp(firebaseConfig);
