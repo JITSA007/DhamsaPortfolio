@@ -567,20 +567,25 @@
             </div>
 
             <!-- Analytics Minimal -->
-            <div class="glass-card p-6 rounded-2xl max-w-2xl mx-auto mb-12 border border-slate-200 dark:border-slate-700/50">
-                <div class="flex justify-between items-center mb-4 border-b border-slate-200 dark:border-slate-700/50 pb-2">
-                    <span class="text-xs font-mono text-slate-500 uppercase tracking-widest font-bold">Global Traffic</span>
-                    <span class="text-xs text-green-500 dark:text-green-400 flex items-center gap-1 font-bold">
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 dark:bg-green-400 animate-pulse"></span> Live
-                    </span>
-                </div>
-                
-                <div id="user-location-badge" style="display:none;" class="mb-4 text-xs text-slate-500 dark:text-slate-400">
-                    <i class="fa-solid fa-location-dot text-indigo-500 mr-1"></i> Detected location: <span id="user-country-text" class="text-slate-900 dark:text-white font-bold">...</span>
+            <div class="glass-card p-8 rounded-2xl max-w-2xl mx-auto mb-12 border border-slate-200 dark:border-slate-700/50">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-200 dark:border-slate-700/50 pb-4">
+                    <div class="text-left">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Visitor Analytics</h3>
+                        <div id="user-location-badge" style="display:none;" class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            <i class="fa-solid fa-location-dot text-indigo-500 mr-1"></i> You are from: <span id="user-country-text" class="text-slate-900 dark:text-white font-bold">...</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                         <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest font-bold mb-1">Total Visits</p>
+                         <p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400" id="total-visitors-count">...</p>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="stats-container">
-                    <div class="col-span-full text-center text-slate-500 text-xs py-2 font-mono">Initializing Data Stream...</div>
+                <div class="space-y-3">
+                    <h4 class="text-xs text-left font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Top 5 Countries</h4>
+                    <div class="grid grid-cols-1 gap-2" id="stats-container">
+                        <div class="text-center text-slate-500 text-xs py-2 font-mono">Initializing Data Stream...</div>
+                    </div>
                 </div>
             </div>
             
@@ -757,71 +762,106 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // REPLACE WITH YOUR REAL KEYS FROM FIREBASE_SETUP.md
+        // REAL CONFIGURATION
         const firebaseConfig = {
-    apiKey: "AIzaSyArNyW9FA7I9g7Kep3RozvPFd0XojBIXyg",
-    authDomain: "dhamsa-e22a3.firebaseapp.com",
-    projectId: "dhamsa-e22a3",
-    storageBucket: "dhamsa-e22a3.firebasestorage.app",
-    messagingSenderId: "836317626812",
-    appId: "1:836317626812:web:b0f9fbffd481efba49ebb9"
-  };
+            apiKey: "AIzaSyArNyW9FA7I9g7Kep3RozvPFd0XojBIXyg",
+            authDomain: "dhamsa-e22a3.firebaseapp.com",
+            projectId: "dhamsa-e22a3",
+            storageBucket: "dhamsa-e22a3.firebasestorage.app",
+            messagingSenderId: "836317626812",
+            appId: "1:836317626812:web:b0f9fbffd481efba49ebb9"
+        };
 
-        if (firebaseConfig.apiKey !== "REPLACE_WITH_YOUR_API_KEY") {
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-            const appId = "portfolio-v2";
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = "portfolio-v2";
 
-            async function initAnalytics() {
+        async function initAnalytics() {
+            try {
+                // 1. Auth
+                await signInAnonymously(auth);
+                
+                // 2. Location
+                let country = "Unknown";
                 try {
-                    await signInAnonymously(auth);
-                    let country = "Unknown";
-                    try {
-                        const res = await fetch('https://ipapi.co/json/');
-                        const data = await res.json();
-                        if(data.country_name) country = data.country_name;
-                        document.getElementById('user-country-text').innerText = country;
-                        document.getElementById('user-location-badge').style.display = "block";
-                    } catch(e) {}
+                    const res = await fetch('https://ipapi.co/json/');
+                    const data = await res.json();
+                    if(data.country_name) country = data.country_name;
+                    
+                    document.getElementById('user-country-text').innerText = country;
+                    document.getElementById('user-location-badge').style.display = "block";
+                } catch(e) { console.log("IP fetch failed", e); }
 
+                // 3. Write Visit (Separate Try-Catch)
+                try {
                     const visitedKey = `visited_${appId}`;
                     if(!sessionStorage.getItem(visitedKey)) {
                         const statsRef = doc(db, 'portfolio_stats', 'visitors', 'countries', country);
                         await setDoc(statsRef, { country: country, count: increment(1) }, { merge: true });
                         sessionStorage.setItem(visitedKey, 'true');
                     }
+                } catch (writeError) {
+                    console.warn("Analytics Write Failed (Permission Denied?):", writeError);
+                    // Continue to read...
+                }
 
-                    const statsCol = collection(db, 'portfolio_stats', 'visitors', 'countries');
-                    onSnapshot(statsCol, (snapshot) => {
-                        const container = document.getElementById('stats-container');
-                        container.innerHTML = '';
-                        const data = [];
-                        snapshot.forEach(doc => data.push(doc.data()));
-                        data.sort((a, b) => (b.count || 0) - (a.count || 0));
+                // 4. Read Updates (Separate Try-Catch logic handled by onSnapshot error callback)
+                const statsCol = collection(db, 'portfolio_stats', 'visitors', 'countries');
+                onSnapshot(statsCol, (snapshot) => {
+                    const container = document.getElementById('stats-container');
+                    const totalCounter = document.getElementById('total-visitors-count');
+                    
+                    container.innerHTML = '';
+                    
+                    const data = [];
+                    let totalVisits = 0;
 
-                        if(data.length === 0) {
-                            container.innerHTML = '<div class="col-span-full text-center text-slate-500 font-mono text-xs">Waiting for data...</div>';
-                            return;
-                        }
-
-                        data.slice(0, 8).forEach((stat) => {
-                            const html = `
-                                <div class="flex items-center justify-between bg-white dark:bg-slate-900/50 p-2 rounded border border-slate-200 dark:border-slate-800">
-                                    <span class="text-xs text-slate-600 dark:text-slate-300 truncate font-medium">${stat.country}</span>
-                                    <span class="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 px-1.5 rounded">${stat.count || 0}</span>
-                                </div>
-                            `;
-                            container.insertAdjacentHTML('beforeend', html);
-                        });
+                    snapshot.forEach(doc => {
+                        const d = doc.data();
+                        data.push(d);
+                        totalVisits += (d.count || 0);
                     });
-                } catch (error) { console.error(error); }
+
+                    totalCounter.innerText = totalVisits.toLocaleString();
+                    data.sort((a, b) => (b.count || 0) - (a.count || 0));
+
+                    if(data.length === 0) {
+                        container.innerHTML = '<div class="text-center text-slate-500 text-xs font-mono">No data yet (Check DB).</div>';
+                        return;
+                    }
+
+                    data.slice(0, 5).forEach((stat, index) => {
+                        let rankStyle = "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400";
+                        if(index === 0) rankStyle = "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 font-bold border-yellow-200 dark:border-yellow-700";
+                        if(index === 1) rankStyle = "bg-slate-200 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 font-bold";
+                        if(index === 2) rankStyle = "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 font-bold border-orange-200 dark:border-orange-700";
+
+                        const html = `
+                            <div class="flex items-center justify-between p-2 rounded border ${index < 3 ? 'border-transparent' : 'border-slate-200 dark:border-slate-800'} ${rankStyle}">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] w-4 h-4 flex items-center justify-center rounded-full bg-black/10 dark:bg-white/10 text-current opacity-70">#${index+1}</span>
+                                    <span class="text-xs truncate font-medium">${stat.country}</span>
+                                </div>
+                                <span class="text-xs font-mono">${stat.count || 0}</span>
+                            </div>
+                        `;
+                        container.insertAdjacentHTML('beforeend', html);
+                    });
+                }, (error) => {
+                    console.error("Analytics Read Failed:", error);
+                    // Hide the error text for a cleaner look if deployment fails
+                    document.getElementById('stats-container').innerHTML = 
+                        '<div class="text-slate-400 text-xs p-2 text-center">Analytics Unavailable</div>';
+                });
+
+            } catch (error) { 
+                console.error("Analytics Init Failed:", error); 
+                document.getElementById('stats-container').innerHTML = '<div class="text-red-500 text-xs">Auth Failed.</div>';
             }
-            initAnalytics();
-        } else {
-             document.getElementById('stats-container').innerHTML = 
-                '<div class="col-span-full text-center text-slate-500 font-mono text-xs p-2">Analytics Config Missing.</div>';
         }
+        
+        initAnalytics();
     </script>
 </body>
 </html>
